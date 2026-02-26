@@ -4,8 +4,8 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Scan Barcode</title>
-  <link rel="stylesheet" href="./style.css"/>
-  <script src="https://unpkg.com/html5-qrcode" defer></script>
+  <link rel="stylesheet" href="style.css"/>
+  <script src="https://unpkg.com/html5-qrcode"></script>
 </head>
 <body>
 <div class="container">
@@ -13,12 +13,14 @@
 
   <button class="btn btn-grey" id="btnBack">← Kembali</button>
   <select id="camList" style="margin-top:10px;"></select>
-  <button class="btn btn-dark" id="startBtn">📷 Mulai Scan</button>
+
+  <!-- Tombol ini disembunyikan jika auto-start berhasil -->
+  <button class="btn btn-dark" id="startBtn" style="display:none;">📷 Mulai Scan</button>
 
   <div id="reader" style="margin-top:15px;"></div>
   <p id="status" style="text-align:center;color:#666;"></p>
 </div>
 
-<script src="./scanner.js"></script>
+<script src="scanner.js"></script>
 </body>
 </html>
