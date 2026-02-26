@@ -1,78 +1,57 @@
-// Baca parameter ?return=<web app url>
 const params = new URLSearchParams(location.search);
-const RETURN_URL = params.get('return') || '';
-const DEFAULT_RETURN_URL = ''; // opsional fallback
+const RETURN_URL = params.get("return") || "";
 
-const statusEl = document.getElementById('status');
-const selectEl = document.getElementById('cameraSelect');
-const backBtn  = document.getElementById('backBtn');
+const statusEl = document.getElementById("status");
+const selectEl = document.getElementById("cameraSelect");
+const backBtn = document.getElementById("backBtn");
 
 let html5QrCode;
 let currentCamId;
 
-function goBack() {
-  const target = RETURN_URL || DEFAULT_RETURN_URL;
-  if (target) location.href = target;
-  else alert('Tidak ada URL aplikasi utama. Buka halaman ini dari tombol "SCAN (GitHub)" di aplikasi.');
+backBtn.onclick = () => {
+  if(RETURN_URL) location.href = RETURN_URL;
+  else alert("Tidak ada URL aplikasi utama.");
+};
+
+async function listCameras(){
+  const cams = await Html5Qrcode.getCameras();
+  cams.forEach(c => {
+    const o = document.createElement("option");
+    o.value = c.id;
+    o.innerText = c.label || "Kamera";
+    selectEl.appendChild(o);
+  });
+
+  const back = cams.find(c => /back|rear|environment/i.test(c.label));
+  currentCamId = back?.id || cams[0].id;
+  selectEl.value = currentCamId;
 }
 
-backBtn.addEventListener('click', goBack);
-
-async function listCameras() {
-  try {
-    const devices = await Html5Qrcode.getCameras();
-    selectEl.innerHTML = '';
-    devices.forEach((d, i) => {
-      const opt = document.createElement('option');
-      opt.value = d.id;
-      opt.textContent = d.label || `Kamera ${i + 1}`;
-      selectEl.appendChild(opt);
-    });
-    const back = devices.find(d => /back|rear|environment/i.test(d.label));
-    currentCamId = back?.id || devices[0]?.id;
-    if (currentCamId) selectEl.value = currentCamId;
-  } catch (e) {
-    statusEl.textContent = 'Gagal membaca daftar kamera: ' + e;
-  }
-}
-
-selectEl.addEventListener('change', () => {
+selectEl.onchange = () => {
   currentCamId = selectEl.value;
-  try { html5QrCode?.stop().then(() => start()); } catch(_) {}
-});
+  html5QrCode.stop().then(startScan);
+};
 
-async function start() {
-  try {
-    if (!currentCamId) { await listCameras(); }
-    if (!currentCamId) { statusEl.textContent = 'Tidak ada kamera ditemukan.'; return; }
+async function startScan(){
+  statusEl.innerText = "Mengaktifkan kamera...";
 
-    statusEl.textContent = 'Membuka kamera...';
-    html5QrCode = html5QrCode || new Html5Qrcode("reader");
+  html5QrCode = new Html5Qrcode("reader");
 
-    await html5QrCode.start(
-      { deviceId: { exact: currentCamId } },
-      { fps: 10, qrbox: 250 },
-      (decodedText) => {
-        html5QrCode.stop().then(() => {
-          try { navigator.vibrate?.(50); } catch(_) {}
-          const target = (RETURN_URL || DEFAULT_RETURN_URL);
-          if (!target) {
-            alert('Berhasil scan: ' + decodedText + '\nTetapi URL kembali tidak diketahui.');
-            return;
-          }
-          location.replace(target + '?code=' + encodeURIComponent(decodedText));
-        });
-      },
-      () => { /* ignore frame tanpa barcode */ }
-    );
-    statusEl.textContent = 'Arahkan ke barcode/QR.';
-  } catch (e) {
-    statusEl.textContent = 'Tidak bisa memulai kamera: ' + e;
-  }
+  await html5QrCode.start(
+    { deviceId: { exact: currentCamId } },
+    { fps: 10, qrbox: 250 },
+    text => {
+      html5QrCode.stop().then(() => {
+        location.href = RETURN_URL + "?code=" + encodeURIComponent(text);
+      });
+    }
+  );
+
+  statusEl.innerText = "Arahkan ke barcode...";
 }
 
-// 🚀 Auto-start ketika halaman dibuka
+// AUTO-START
 (async () => {
   await listCameras();
-  await start();
+  await startScan();
 })();
