@@ -1,52 +1,57 @@
-<!doctype html>
-<html lang="id">
+<!DOCTYPE html>
+<html>
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Scan Barcode</title>
-
-  <script src="https://unpkg.com/html5-qrcode"></script>
-
-  <style>
-    body { margin:0; padding:0; background:#f8fafc; font-family:sans-serif; }
-    .box {
-      max-width:460px; margin:auto; background:white; padding:15px;
-      border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,.15); margin-top:20px;
-    }
-    h3 { text-align:center; color:#2563eb; margin-bottom:20px; }
-
-    #reader { border-radius:10px; overflow:hidden; margin-top:12px; }
-
-    select, button {
-      width:100%; padding:12px; border-radius:8px;
-      border:1px solid #cbd5e1; margin-top:12px; font-size:15px;
-    }
-
-    .btn { background:#1e293b; color:white; border:none; font-weight:600; }
-  </style>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Inventory NVDC</title>
+  <link rel="stylesheet" href="./style.css"/>
 </head>
-
 <body>
-<div class="box">
+<div class="container">
 
-  <h3>Scan Barcode</h3>
+  <h5>INVENTORY NVDC SUNTER</h5>
 
-  <button id="backBtn" class="btn">← Kembali</button>
+  <div class="grid-2">
+    <button class="btn btn-blue" id="btnStok">📊 DATA STOK</button>
+    <button class="btn btn-grey" id="btnExcel">📥 EXCEL</button>
+  </div>
 
-  <!-- dropdown kamera -->
-  <select id="cameraSelect"></select>
+  <small><b>⚠️ STOK KRITIS:</b></small>
+  <div id="kritisList" class="kritis-scroll"></div>
 
-  <!-- tombol mulai scan -->
-  <button id="startBtn" class="btn">📷 Mulai Scan</button>
+  <div class="box-stok">
+    <div id="stokDisplay" class="stok-angka">-</div>
+    <div id="namaDisplay" style="color:#64748b;">Pilih barang untuk cek stok</div>
+  </div>
 
-  <div id="reader"></div>
+  <!-- POSISI SESUAI PERMINTAAN -->
+  <button class="btn btn-dark" id="btnScan">📷 SCAN BARCODE</button>
 
-  <p id="status" style="text-align:center;color:#64748b;font-size:13px;margin-top:10px;">
-    Menyiapkan kamera...
-  </p>
+  <input list="listBarang" id="namaBarang" placeholder="Cari Nama Barang..."/>
+  <datalist id="listBarang"></datalist>
+  <input id="idBarang" type="hidden"/>
+
+  <div class="grid-2">
+    <select id="tipe">
+      <option value="Keluar">Keluar</option>
+      <option value="Masuk">Masuk</option>
+    </select>
+    <input id="qty" type="number" placeholder="Qty"/>
+  </div>
+
+  <input id="cust" type="text" placeholder="Customer / Supplier"/>
+
+  <button class="btn btn-success" id="btnSimpan">SIMPAN DATA</button>
+
+  <div style="margin-top:20px;">
+    <small><b>🕒 5 TRANSAKSI TERAKHIR</b></small>
+    <div id="historyList"></div>
+  </div>
+
 </div>
 
-<script src="./main.js"></script>
+<div class="fab" id="fabChart">📊</div>
 
+<script src="./app.js"></script>
 </body>
 </html>
