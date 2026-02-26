@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>INVENTORY NVDC SUNTER — SCANNER</title>
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <style>
+    :root { --primary: #2563eb; --danger: #dc2626; --success: #16a34a; --bg: #f8fafc; }
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: var(--bg); margin: 0; padding: 10px; color: #334155; }
+    .app-container { max-width: 450px; margin: auto; background: white; border-radius: 12px; padding: 15px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+    h5 { text-align: center; color: var(--primary); margin: 10px 0; }
+    .btn { border: none; padding: 10px; border-radius: 6px; font-weight: 600; cursor: pointer; width: 100%; font-size: 14px; transition: opacity 0.2s; }
+    .btn-secondary { background: #64748b; color: white; }
+    .row { margin: 10px 0; }
+    #reader { margin-top: 10px; overflow: hidden; border-radius: 8px; }
+    .small { font-size: 12px; color: #64748b; }
+    select { width: 100%; padding: 10px; margin-top: 6px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <h5>INVENTORY NVDC SUNTER</h5>
+
+    <div class="row">
+      <button id="backBtn" class="btn btn-secondary">⬅️ Kembali</button>
+    </div>
+
+    <div class="row small" id="status">Menyiapkan kamera...</div>
+
+    <div class="row">
+      <label class="small">Pilih Kamera:</label>
+      <select id="cameraSelect"></select>
+    </div>
+
+    <div id="reader"></div>
+  </div>
+
+  <script src="./main.js"></script>
+</body>
+</html>
