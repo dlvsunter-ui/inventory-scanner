@@ -4,7 +4,7 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Inventory NVDC</title>
-  <link rel="stylesheet" href="./style.css"/>
+  <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
 <div class="container">
@@ -24,7 +24,7 @@
     <div id="namaDisplay" style="color:#64748b;">Pilih barang untuk cek stok</div>
   </div>
 
-  <!-- POSISI SESUAI PERMINTAAN -->
+  <!-- Tombol scan berada DI BAWAH kotak biru, DI ATAS input barang -->
   <button class="btn btn-dark" id="btnScan">📷 SCAN BARCODE</button>
 
   <input list="listBarang" id="namaBarang" placeholder="Cari Nama Barang..."/>
@@ -47,11 +47,23 @@
     <small><b>🕒 5 TRANSAKSI TERAKHIR</b></small>
     <div id="historyList"></div>
   </div>
-
 </div>
 
-<div class="fab" id="fabChart">📊</div>
+<div class="fab" id="fabChart" title="Chart">📊</div>
 
-<script src="./app.js"></script>
+<!-- Modal DATA STOK (bergambar) -->
+<div id="modalStok" class="modal" role="dialog" aria-modal="true">
+  <div class="panel">
+    <div class="panel-header">
+      <div><b>Data Stok</b></div>
+      <button id="closeStok" class="btn btn-grey" style="width:auto;padding:6px 10px;">✕</button>
+    </div>
+    <div class="panel-body">
+      <div id="stockGrid" class="stock-grid"></div>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
 </body>
 </html>
