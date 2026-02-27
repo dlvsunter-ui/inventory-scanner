@@ -39,14 +39,21 @@ async function loadData() {
     data.kritis.map(k => `<div class="card-kritis"><b>${k.nama}</b><br>Sisa: ${k.stok}</div>`).join('');
 
   // history
-  document.getElementById('historyList').innerHTML =
-    data.history.map(h => `
-      <div class="history-item">
+document.getElementById('historyList').innerHTML =
+  data.history.map(h => `
+    <div class="history-item">
+      <div style="display:flex;align-items:center;gap:8px;">
         <span class="badge" style="background:${h.tipe==='Masuk'?'#16a34a':'#dc2626'}">${h.tipe}</span>
-        <b>${h.nama}</b> (${h.qty})<br/>
-        <small>${h.tgl} | ${h.cust}</small>
+        <div style="flex:1; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+          ${h.nama}
+        </div>
+        <div style="color:#0f172a;">(${h.qty})</div>
       </div>
-    `).join('');
+      <div style="margin-top:4px;color:#64748b;font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+        ${h.tgl_fmt} | ${h.cust || '-'} | Stok saat ini: ${h.stokNow === '' ? '-' : h.stokNow}
+      </div>
+    </div>
+  `).join('');
 
   // render modal stok (bergambar)
   renderStockGrid(master);
