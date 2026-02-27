@@ -4,13 +4,19 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Chart Inventory</title>
-  <link rel="stylesheet" href="style.css"/>
+  <!-- CSS utama -->
+  <link rel="stylesheet" href="./style.css">
+  <!-- Google Charts -->
   <script src="https://www.gstatic.com/charts/loader.js"></script>
+
   <style>
     .chart-wrap { max-width:720px; margin:10px auto; padding:10px; }
-    .chart-box { height:360px; background:#fff; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,.08); padding:10px; margin-bottom:14px; }
+    .chart-box { background:#fff; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,.08); padding:10px; margin-bottom:14px; }
+    .chart-box.hbar { height:auto; max-height:70vh; overflow:auto; } /* scroll chart 3 */
     .topbar { display:flex; gap:8px; align-items:center; justify-content:space-between; margin:10px auto; max-width:720px; }
     .btn-back { background:#64748b; color:#fff; border:none; padding:10px 12px; border-radius:8px; }
+    .legend { display:flex; gap:12px; align-items:center; flex-wrap:wrap; padding:8px 12px; color:#475569; font-size:12px; }
+    .legend .dot { width:12px; height:12px; border-radius:4px; display:inline-block; margin-right:6px; }
   </style>
 </head>
 <body>
@@ -21,47 +27,167 @@
   </div>
 
   <div class="chart-wrap">
-    <div id="chart_keluar" class="chart-box"></div>
-    <div id="chart_kritis" class="chart-box"></div>
+    <!-- Chart 1 -->
+    <div id="chart_keluar" class="chart-box" style="height:360px;"></div>
+
+    <!-- Chart 2 -->
+    <div id="chart_kritis" class="chart-box" style="height:360px;"></div>
+
+    <!-- Legend untuk chart rasio -->
+    <div class="legend chart-box" style="display:flex;justify-content:flex-start;">
+      <div><span class="dot" id="dotOver"></span> Overstok (rasio ≥ ambang)</div>
+      <div><span class="dot" id="dotNormal"></span> Normal (1 ≤ rasio &lt; ambang)</div>
+      <div><span class="dot" id="dotUnder"></span> Understock (rasio &lt; 1)</div>
+    </div>
+
+    <!-- Chart 3: Horizontal Rasio -->
+    <div id="chart_ratio" class="chart-box hbar"></div>
   </div>
 
 <script>
+  // ====== KONFIGURASI (bisa diubah) ======
   const API_URL = localStorage.getItem('API_URL') || 'https://script.google.com/macros/s/AKfycbxdbC6l1GKBT-EYeCbm6hPfIUnEaCNLB6TBDxyvuBY_3QnCm0XCztubbPyuCRRMoURtxQ/exec';
-  google.charts.load('current', {'packages':['corechart']});
-  google.charts.setOnLoadCallback(loadChart);
+  const OVER_THRESHOLD = 1.2;        // ambang overstock (mis. 1.2 = stok ≥ 120% safety)
+  const COLOR_OVER   = '#2563eb';    // biru (overstock)
+  const COLOR_NORMAL = '#9ca3af';    // abu (normal)
+  const COLOR_UNDER  = '#dc2626';    // merah (understock)
 
-  async function loadChart(){
-    const res = await fetch(API_URL + '?mode=chart');
-    const data = await res.json();
-    draw(data);
+  // set legend colors
+  window.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('dotOver').style.background = COLOR_OVER;
+    document.getElementById('dotNormal').style.background = COLOR_NORMAL;
+    document.getElementById('dotUnder').style.background = COLOR_UNDER;
+  });
+
+  // ====== LOAD GOOGLE CHARTS ======
+  google.charts.load('current', {'packages':['corechart']});
+  google.charts.setOnLoadCallback(loadAll);
+
+  async function loadAll(){
+    // Ambil ringkasan chart dan master barang
+    const [resSummary, resDb] = await Promise.all([
+      fetch(API_URL + '?mode=chart'),
+      fetch(API_URL)
+    ]);
+    const summary = await resSummary.json(); // { topKeluar, topKritis }
+    const base = await resDb.json();         // { db, kritis, history }
+
+    drawTopKeluar(summary);
+    drawTopKritis(summary);
+    drawRatio(base.db);
   }
 
-  function draw(data){
-    // 1) Top 5 Keluar bulan ini
+  // ====== CHART 1: Top 5 Keluar ======
+  function drawTopKeluar(data){
     if (!data.topKeluar || data.topKeluar.length === 0) {
       document.getElementById('chart_keluar').innerHTML =
         '<div style="padding:16px;color:#64748b;">Belum ada transaksi Keluar bulan ini.</div>';
-    } else {
-      const d1 = new google.visualization.DataTable();
-      d1.addColumn('string','Barang');
-      d1.addColumn('number','Qty Keluar');
-      d1.addRows(data.topKeluar);
-      new google.visualization.ColumnChart(document.getElementById('chart_keluar'))
-        .draw(d1, { title:'5 Barang Terbanyak Keluar (Bulan Ini)', legend:'none', colors:['#2563eb'], vAxis:{minValue:0} });
+      return;
     }
+    const d1 = new google.visualization.DataTable();
+    d1.addColumn('string','Barang');
+    d1.addColumn('number','Qty Keluar');
+    d1.addRows(data.topKeluar);
+    const opt1 = {
+      title:'5 Barang Terbanyak Keluar (Bulan Ini)',
+      legend:'none', colors:['#2563eb'],
+      vAxis:{minValue:0}
+    };
+    new google.visualization.ColumnChart(document.getElementById('chart_keluar')).draw(d1,opt1);
+  }
 
-    // 2) Top 5 Stok Paling Kritis (Defisit = Safety - Stok)
+  // ====== CHART 2: Top 5 Stok Paling Kritis (Defisit = Safety - Stok) ======
+  function drawTopKritis(data){
     if (!data.topKritis || data.topKritis.length === 0) {
       document.getElementById('chart_kritis').innerHTML =
         '<div style="padding:16px;color:#64748b;">Tidak ada barang yang di bawah Safety Stock.</div>';
-    } else {
-      const d2 = new google.visualization.DataTable();
-      d2.addColumn('string','Barang');
-      d2.addColumn('number','Defisit (Safety - Stok)');
-      d2.addRows(data.topKritis);
-      new google.visualization.ColumnChart(document.getElementById('chart_kritis'))
-        .draw(d2, { title:'5 Barang Stok Paling Kritis (Defisit Safety - Stok)', legend:'none', colors:['#dc2626'], vAxis:{minValue:0} });
+      return;
     }
+    const d2 = new google.visualization.DataTable();
+    d2.addColumn('string','Barang');
+    d2.addColumn('number','Defisit (Safety - Stok)');
+    d2.addRows(data.topKritis);
+    const opt2 = {
+      title:'5 Barang Stok Paling Kritis (Defisit Safety - Stok)',
+      legend:'none', colors:['#dc2626'],
+      vAxis:{minValue:0}
+    };
+    new google.visualization.ColumnChart(document.getElementById('chart_kritis')).draw(d2,opt2);
+  }
+
+  // ====== CHART 3: Horizontal bar — Rasio Stok/Safety untuk SEMUA barang ======
+  function drawRatio(db){
+    if (!db || db.length === 0) {
+      document.getElementById('chart_ratio').innerHTML =
+        '<div style="padding:16px;color:#64748b;">Data barang belum tersedia.</div>';
+      return;
+    }
+
+    // rows: [Nama, Rasio, Style, Annotation, TooltipHTML]
+    const rows = db.map(item => {
+      const stok   = Number(item.stok || 0);
+      const safety = Number(item.safety || 0);
+
+      // hitung rasio (toleransi safety == 0)
+      let ratio;
+      if (safety > 0) ratio = stok / safety;
+      else ratio = (stok > 0 ? 999 : 0); // kalau tak ada safety tapi ada stok → anggap over besar
+
+      // kategori warna
+      let color, label;
+      if (ratio < 1) { color = COLOR_UNDER; label = 'Under'; }
+      else if (ratio >= OVER_THRESHOLD) { color = COLOR_OVER; label = 'Over'; }
+      else { color = COLOR_NORMAL; label = 'Normal'; }
+
+      // annotation & tooltip
+      const ann = (safety > 0 && ratio !== 999) ? `${ratio.toFixed(2)}×` : (ratio === 999 ? '∞' : '0');
+      const tip = `
+        <div style="padding:8px 10px;">
+          <div style="font-weight:700; margin-bottom:4px;">${escapeHtml(item.nama)}</div>
+          <div>Stok: <b>${stok}</b> ${item.satuan || ''}</div>
+          <div>Safety: <b>${safety}</b></div>
+          <div>Status: <b>${label}</b></div>
+          <div>Rasio: <b>${ann}</b></div>
+        </div>`;
+
+      // untuk visual, rasio ∞ divisualkan 5
+      return [item.nama, (ratio === 999 ? 5 : ratio), color, ann, tip];
+    });
+
+    // urut: rasio terbesar → paling kecil
+    rows.sort((a,b) => b[1] - a[1]);
+
+    // DataTable
+    const dt = new google.visualization.DataTable();
+    dt.addColumn('string', 'Barang');
+    dt.addColumn('number', 'Rasio (Stok / Safety)');
+    dt.addColumn({type:'string', role:'style'});
+    dt.addColumn({type:'string', role:'annotation'});
+    dt.addColumn({type:'string', role:'tooltip', p:{html:true}});
+    dt.addRows(rows);
+
+    // Tinggi dinamis: 28px per bar, dibatasi max 900px. Container scroll kalau lebih.
+    const h = Math.min(rows.length * 28 + 60, 900);
+
+    const opt = {
+      title: `Rasio Stok / Safety — Semua Barang (Ambang Over = ${OVER_THRESHOLD}×)`,
+      legend: 'none',
+      tooltip: { isHtml:true },
+      height: h,
+      chartArea: { left: 240, right: 24, top: 40, height: h - 80 }, // ruang kiri besar untuk nama panjang
+      bars: 'horizontal',
+      hAxis: { minValue: 0 },
+      bar: { groupWidth: 18 },
+      annotations: { textStyle: { color: '#0f172a', fontSize: 11 } }
+    };
+
+    const chart = new google.visualization.BarChart(document.getElementById('chart_ratio'));
+    chart.draw(dt, opt);
+  }
+
+  // helper untuk tooltip HTML
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   }
 </script>
 </body>
