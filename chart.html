@@ -26,9 +26,7 @@
   </div>
 
 <script>
-  // Ambil API_URL dari localStorage (di-set oleh app.js)
-  const API_URL = localStorage.getItem('API_URL') || 'PASTE_URL_EXEC_DI_SINI';
-
+  const API_URL = localStorage.getItem('API_URL') || 'https://script.google.com/macros/s/AKfycbxdbC6l1GKBT-EYeCbm6hPfIUnEaCNLB6TBDxyvuBY_3QnCm0XCztubbPyuCRRMoURtxQ/exec';
   google.charts.load('current', {'packages':['corechart']});
   google.charts.setOnLoadCallback(loadChart);
 
@@ -40,20 +38,30 @@
 
   function draw(data){
     // 1) Top 5 Keluar bulan ini
-    const d1 = new google.visualization.DataTable();
-    d1.addColumn('string','Barang');
-    d1.addColumn('number','Qty Keluar');
-    d1.addRows(data.topKeluar);
-    const opt1 = { title:'5 Barang Terbanyak Keluar (Bulan Ini)', legend:'none', colors:['#2563eb'], vAxis:{minValue:0} };
-    new google.visualization.ColumnChart(document.getElementById('chart_keluar')).draw(d1,opt1);
+    if (!data.topKeluar || data.topKeluar.length === 0) {
+      document.getElementById('chart_keluar').innerHTML =
+        '<div style="padding:16px;color:#64748b;">Belum ada transaksi Keluar bulan ini.</div>';
+    } else {
+      const d1 = new google.visualization.DataTable();
+      d1.addColumn('string','Barang');
+      d1.addColumn('number','Qty Keluar');
+      d1.addRows(data.topKeluar);
+      new google.visualization.ColumnChart(document.getElementById('chart_keluar'))
+        .draw(d1, { title:'5 Barang Terbanyak Keluar (Bulan Ini)', legend:'none', colors:['#2563eb'], vAxis:{minValue:0} });
+    }
 
-    // 2) Top 5 Stok Kritis
-    const d2 = new google.visualization.DataTable();
-    d2.addColumn('string','Barang');
-    d2.addColumn('number','Stok');
-    d2.addRows(data.topKritis);
-    const opt2 = { title:'5 Barang Stok Paling Kritis', legend:'none', colors:['#dc2626'], vAxis:{minValue:0} };
-    new google.visualization.ColumnChart(document.getElementById('chart_kritis')).draw(d2,opt2);
+    // 2) Top 5 Stok Paling Kritis (Defisit = Safety - Stok)
+    if (!data.topKritis || data.topKritis.length === 0) {
+      document.getElementById('chart_kritis').innerHTML =
+        '<div style="padding:16px;color:#64748b;">Tidak ada barang yang di bawah Safety Stock.</div>';
+    } else {
+      const d2 = new google.visualization.DataTable();
+      d2.addColumn('string','Barang');
+      d2.addColumn('number','Defisit (Safety - Stok)');
+      d2.addRows(data.topKritis);
+      new google.visualization.ColumnChart(document.getElementById('chart_kritis'))
+        .draw(d2, { title:'5 Barang Stok Paling Kritis (Defisit Safety - Stok)', legend:'none', colors:['#dc2626'], vAxis:{minValue:0} });
+    }
   }
 </script>
 </body>
